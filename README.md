@@ -23,6 +23,7 @@ The code is divided into two main parts:
 - In both simulations, careful design of the reference signal is crucial. The matrix for channel estimationg formed by the reference signal and a '0' sequence must be full rank. For example, with a 2x2 '0' sequence backscatter data of [1,1], the reference signal backscatter must be [1,-1] or [-1,1], but not [-1,-1].
 - The first method does not require an in-depth estimation of the channel and infers backscatter data based on the channel's phase.
 - The second method requires a detailed estimation of the channel. While the real MIMO backscatter channel has infinitely many solutions, any solution can be used for decoding as the information is carried on the phase.
+- In the proof-of-concept simulation, we demonstrate both methods. However, in the 802.11nHT code, we implement the more advanced method, specifically the second method.
 - VMscatter operates on symbol-level modulation, and pilot tracking should be disabled.
 
 ## Conclusion
@@ -55,6 +56,7 @@ The VMscatter design introduces negligible overheads in terms of hardware cost, 
 - 在两种仿真中，都需要精心设计参考信号。由参考信号和'0'序列组成的测试信道矩阵必须是满秩的。例如，对于2x2的'0'序列反向散射数据[1,1]，参考信号中的反向散射必须是[1,-1]或[-1,1]，而不能是[-1,-1]。
 - 第一种方法不需要深入估计信道，而是根据信道的相位来推断反向散射数据。
 - 第二种方法需要深入估计信道。尽管真实的MIMO反向散射信道有无穷多解，但任何解都可用于解码，因为信息是载在相位上的。
+- 在概念验证仿真中，我们展示了两种方法。然而，在802.11nHT代码中，我们实现了更高级的方法，具体来说就是第二种方法。
 - VMscatter采用符号级调制，需要关闭导频跟踪。
 
 ## 结论
