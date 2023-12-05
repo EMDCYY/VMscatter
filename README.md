@@ -1,4 +1,4 @@
-# README for Paper_VMscatter Simulation Code
+# VMscatter Code
 
 ## Project Overview
 
@@ -12,7 +12,7 @@ The code is divided into two main parts:
 - This is a simplified 2x2 WiFi MIMO Backscatter simulation based on 802.11g. 
 - It is designed to provide an understanding of the decoding algorithms used in VMscatter.
 
-### 802.11nHT Simulation
+### 802.11nHT
 - Based on MATLAB's 802.11n Packet Error Rate Simulation for a 2x2 TGn Channel.
 - This simulation integrates backscatter modulation and demodulation into the code.
 - It accounts for multipath effects, delays, noise, etc.
@@ -29,8 +29,8 @@ The code is divided into two main parts:
 
 The VMscatter design introduces negligible overheads in terms of hardware cost, energy consumption, and computation, making it a practical solution for advanced MIMO backscatter systems.
 
-# 中文
-# Paper_VMscatter仿真代码说明文档
+
+# VMscatter代码中文说明
 
 ## 项目概述
 
@@ -44,7 +44,7 @@ The VMscatter design introduces negligible overheads in terms of hardware cost, 
 - 这是基于802.11g的简化2x2 WiFi MIMO反向散射仿真。
 - 旨在帮助用户理解VMscatter中使用的解码算法。
 
-### 802.11nHT仿真
+### 802.11nHT
 - 基于MatLab的802.11n 2x2 TGn信道的包错误率仿真。
 - 将反向散射的调制和解调集成到代码中。
 - 考虑了多径效应、延迟、噪声等因素。
