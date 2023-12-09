@@ -2,16 +2,20 @@ close all;
 clear;
 clc;
 
-snr_orig = 55*ones(1,10);
+NumTransmitAntennas = 4;
+NumTagAntennas = 4;
+NumReceiveAntennas = 4;
 snr_vmsx = 25:10:65;
+snr_orig = 55*ones(1,length(snr_vmsx));
+
 
 % Create a format configuration object for a 2-by-2 HT transmission
 cfgHT = wlanHTConfig;
 cfgHT.ChannelBandwidth = 'CBW20'; % 20 MHz channel bandwidth
-cfgHT.NumTransmitAntennas = 2;    % 2 transmit antennas
-cfgHT.NumSpaceTimeStreams = 2;    % 2 space-time streams
-cfgHT.PSDULength = 1000;          % PSDU length in bytes
-cfgHT.MCS = 15;                   % 2 spatial streams, 64-QAM rate-5/6
+cfgHT.NumTransmitAntennas = NumTransmitAntennas;    % 2 transmit antennas
+cfgHT.NumSpaceTimeStreams = cfgHT.NumTransmitAntennas;    % 2 space-time streams
+cfgHT.PSDULength = 2000;          % PSDU length in bytes
+cfgHT.MCS = 15;                   % 64-QAM rate-5/6
 cfgHT.ChannelCoding = 'BCC';      % BCC channel coding
 
 
@@ -19,7 +23,7 @@ cfgHT.ChannelCoding = 'BCC';      % BCC channel coding
 tgnChannel = wlanTGnChannel;
 tgnChannel.DelayProfile = 'Model-A';
 tgnChannel.NumTransmitAntennas = cfgHT.NumTransmitAntennas;
-tgnChannel.NumReceiveAntennas = 2;
+tgnChannel.NumReceiveAntennas = NumReceiveAntennas;
 tgnChannel.TransmitReceiveDistance = 3; % Distance in meters for NLOS
 tgnChannel.LargeScaleFadingEffect = 'None';
 tgnChannel.NormalizeChannelOutputs = false;
@@ -39,25 +43,25 @@ tgnChannel.SampleRate = fs;
 
 ind = wlanFieldIndices(cfgHT);
 
-S = numel(snr_vmsx);
-packetErrorRate_orig = zeros(S,1);
-packetErrorRate_vmsx = zeros(S,1);
+cntSNR = numel(snr_vmsx);
+packetErrorRate_orig = zeros(cntSNR,1);
+packetErrorRate_vmsx = zeros(cntSNR,1);
 
 rxDemod_orig = @rxDemod;
 rxDemod_vmsx = @rxDemod;
 
 %parfor i = 1:S % Use 'parfor' to speed up the simulation
-for i = 1:S % Use 'for' to debug the simulation
+for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
     % Set random substream index per iteration to ensure that each
     % iteration uses a repeatable set of random numbers
-    stream = RandStream('combRecursive','Seed',0);
-    stream.Substream = i;
-    RandStream.setGlobalStream(stream);
+    % stream = RandStream('combRecursive','Seed',0);
+    % stream.Substream = idxSNR;
+    % RandStream.setGlobalStream(stream);
 
     % Account for noise energy in nulls so the SNR is defined per
     % active subcarrier
-    packetSNR_orig = snr_orig(i)-10*log10(ofdmInfo.FFTLength/ofdmInfo.NumTones);
-    packetSNR_vmsx = snr_vmsx(i)-10*log10(ofdmInfo.FFTLength/ofdmInfo.NumTones);
+    packetSNR_orig = snr_orig(idxSNR)-10*log10(ofdmInfo.FFTLength/ofdmInfo.NumTones);
+    packetSNR_vmsx = snr_vmsx(idxSNR)-10*log10(ofdmInfo.FFTLength/ofdmInfo.NumTones);
 
     % Loop to simulate multiple packets
     numPacketErrors_orig = 0;
@@ -101,11 +105,11 @@ for i = 1:S % Use 'for' to debug the simulation
 
         % Pass the waveform through the tag
         [rx_vmsx, txTagData] = VMscatterMod(rx_before_vmsx, ind, ...
-            tgnChannel.NumTransmitAntennas, tgnChannel.NumReceiveAntennas);
+            NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas);
 
 
         reset(tgnChannel); % Reset channel for different realization
-        rx_after_vmsx = tgnChannel(rx_before_vmsx);
+        rx_after_vmsx = tgnChannel(rx_vmsx);
 
         % Add noise
         rx_after_vmsx = awgn(rx_after_vmsx,packetSNR_vmsx);
@@ -126,20 +130,29 @@ for i = 1:S % Use 'for' to debug the simulation
     end
 
     % Calculate packet error rate (PER) at SNR point
-    packetErrorRate_orig(i) = numPacketErrors_orig/(n-1);
-    disp(['Original Channel: SNR ' num2str(snr_orig(i))...
+    packetErrorRate_orig(idxSNR) = numPacketErrors_orig/(n-1);
+    disp(['Original Channel: SNR ' num2str(snr_orig(idxSNR))...
           ' completed after '  num2str(n-1) ' packets,'...
-          ' PER: ' num2str(packetErrorRate_orig(i))]);
+          ' PER: ' num2str(packetErrorRate_orig(idxSNR))]);
 
-    packetErrorRate_vmsx(i) = numPacketErrors_vmsx/(n-1);
-    disp(['VMscatter Channel: SNR ' num2str(snr_vmsx(i))...
+    packetErrorRate_vmsx(idxSNR) = numPacketErrors_vmsx/(n-1);
+    disp(['VMscatter Channel: SNR ' num2str(snr_vmsx(idxSNR))...
           ' completed after '  num2str(n-1) ' packets,'...
-          ' PER: ' num2str(packetErrorRate_vmsx(i))]);
+          ' PER: ' num2str(packetErrorRate_vmsx(idxSNR))]);
 end
 
-figure;
+figure(1);
+plot(snr_orig,packetErrorRate_orig,'-ob');
+grid on;
+xlabel('SNR [dB]');
+ylabel('PER');
+title(sprintf('%dx%d WiFi MIMIO, 802.11n 20MHz, MCS15, Direct Mapping, Channel Model A', ...
+    NumTransmitAntennas, NumReceiveAntennas));
+
+figure(2);
 plot(snr_vmsx,packetErrorRate_vmsx,'-ob');
 grid on;
 xlabel('SNR [dB]');
 ylabel('PER');
-title('802.11n 20MHz, MCS15, Direct Mapping, 2x2 Channel Model B-NLOS');
+title(sprintf('%dx%dx%d VMScatter, 802.11n 20MHz, MCS15, Direct Mapping, Channel Model A', ...
+    NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas));
