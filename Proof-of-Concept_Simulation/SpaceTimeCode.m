@@ -4,5 +4,5 @@ function code = SpaceTimeCode(a)
     b2 = b(2);
     code1 = b;
     code2 = [-conj(b2), conj(b1)];
-    code = [code1;code2];
+    code = [code1.',code2.'];
 end

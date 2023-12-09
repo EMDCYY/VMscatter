@@ -49,10 +49,10 @@ for loop = 1:1:10000
         code = SpaceTimeCode(tx_tag_data); % space-time coding
 
         tx_wifi_symbol_1 = WiFiData(2, modulation); %Incoming Symbol 1
-        rx_wifi_symbol_1 = H0 \ CH_Post_Tag * diag(code(1,:)) * CH_Pre_Tag * tx_wifi_symbol_1; % Received Symbol 1
+        rx_wifi_symbol_1 = H0 \ CH_Post_Tag * diag(code(:,1)) * CH_Pre_Tag * tx_wifi_symbol_1; % Received Symbol 1
 
         tx_wifi_symbol_2 = WiFiData(2, modulation); %Incoming Symbol 2
-        rx_wifi_symbol_2 = H0 \ CH_Post_Tag * diag(code(2,:)) * CH_Pre_Tag * tx_wifi_symbol_2;% Received Symbol 2
+        rx_wifi_symbol_2 = H0 \ CH_Post_Tag * diag(code(:,2)) * CH_Pre_Tag * tx_wifi_symbol_2;% Received Symbol 2
 
 
         % Decoded backscatter data using Lite VMscatter

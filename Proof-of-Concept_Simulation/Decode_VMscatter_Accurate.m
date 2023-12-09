@@ -34,6 +34,6 @@ options = optimoptions('lsqlin', 'Display', 'off');
 rx_code_1 = lsqlin(C,d1,A,b,Aeq,beq,lb,ub, x0, options);
 rx_code_2 = lsqlin(C,d2,A,b,Aeq,beq,lb,ub, x0, options);
 
-rx_code = [rx_code_1.'; rx_code_2.'];
+rx_code = [rx_code_1, rx_code_2];
 
 end
