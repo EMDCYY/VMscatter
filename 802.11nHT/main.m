@@ -2,11 +2,9 @@ close all;
 clear;
 clc;
 
-
-
-NumTransmitAntennas = 4;
-NumTagAntennas = 4; 
-NumReceiveAntennas = 4; 
+NumTransmitAntennas = 2;
+NumTagAntennas = 2; 
+NumReceiveAntennas = 2; 
 snr_vmsx = 55:10:95;
 snr_orig = 55*ones(1,length(snr_vmsx));
 
@@ -157,18 +155,9 @@ for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
 %         disp([rxDataSubcarrier_vmsx(:,8,:), txDataSubcarrier(:,8,:)]);
 
         rxTagData = VMscatterDeMod(txDataSubcarrier, rxDataSubcarrier_vmsx, ...
-            NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas, cfgHT);
+            NumTagAntennas, cfgHT);
 
-
-        if  detectionError_vmsx == 1
-            numPacketErrors_vmsx = numPacketErrors_vmsx + detectionError_vmsx;
-            continue;
-        end
-        
-        % Determine if any bits are in error, i.e. a packet error
-        packetError_vmsx = any(biterr(txPSDU,rxPSDU_vmsx));
-        numPacketErrors_vmsx= numPacketErrors_vmsx+packetError_vmsx;
-
+        disp([txTagData; rxTagData]);
 
     end
 
@@ -178,10 +167,10 @@ for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
           ' completed after '  num2str(n_orig-1) ' packets,'...
           ' PER: ' num2str(packetErrorRate_orig(idxSNR))]);
 
-    packetErrorRate_vmsx(idxSNR) = numPacketErrors_vmsx/(n_vmsx-1);
-    disp(['VMscatter Channel: SNR ' num2str(snr_vmsx(idxSNR))...
-          ' completed after '  num2str(n_vmsx-1) ' packets,'...
-          ' PER: ' num2str(packetErrorRate_vmsx(idxSNR))]);
+%     packetErrorRate_vmsx(idxSNR) = numPacketErrors_vmsx/(n_vmsx-1);
+%     disp(['VMscatter Channel: SNR ' num2str(snr_vmsx(idxSNR))...
+%           ' completed after '  num2str(n_vmsx-1) ' packets,'...
+%           ' PER: ' num2str(packetErrorRate_vmsx(idxSNR))]);
 end
 
 figure(1);
@@ -192,10 +181,10 @@ ylabel('PER');
 title(sprintf('%dx%d WiFi MIMIO, 802.11n 20MHz, MCS15, Direct Mapping, Channel Model A', ...
     NumTransmitAntennas, NumReceiveAntennas));
 
-figure(2);
-plot(snr_vmsx,packetErrorRate_vmsx,'-ob');
-grid on;
-xlabel('SNR [dB]');
-ylabel('PER');
-title(sprintf('%dx%dx%d VMScatter, 802.11n 20MHz, MCS15, Direct Mapping, Channel Model A', ...
-    NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas));
+% figure(2);
+% plot(snr_vmsx,packetErrorRate_vmsx,'-ob');
+% grid on;
+% xlabel('SNR [dB]');
+% ylabel('PER');
+% title(sprintf('%dx%dx%d VMScatter, 802.11n 20MHz, MCS15, Direct Mapping, Channel Model A', ...
+%     NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas));
