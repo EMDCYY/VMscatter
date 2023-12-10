@@ -1,5 +1,5 @@
 function [bits, eqDataSym, varargout] = wlanHTDataRecover( ...
-    rx, chanEst, noiseVarEst, cfgHT, varargin)
+    rx, chanEst, noiseVarEst, cfgHT, txDataSubcarrier,varargin)
 %wlanHTDataRecover Recover information bits from HT-Data field signal
 %
 %   BITS = wlanHTDataRecover(RX, CHANEST, NOISEVAREST, CFGHT) recovers the
@@ -257,11 +257,14 @@ if calculateCPE==true || calculateAE==true || strcmp(recParams.PilotPhaseTrackin
 end
 
 % Equalization
-if numSS < numSTS
-    [eqDataSym, csiData] = wlan.internal.wlanSTBCCombine(demodData, chanEstData, numSS, recParams.EqualizationMethod, noiseVarEst);
-else
-    [eqDataSym, csiData] = wlan.internal.wlanEqualize(demodData, chanEstData, recParams.EqualizationMethod, noiseVarEst);
-end
+% if numSS < numSTS
+%     [eqDataSym, csiData] = wlan.internal.wlanSTBCCombine(demodData, chanEstData, numSS, recParams.EqualizationMethod, noiseVarEst);
+% else
+%     [eqDataSym, csiData] = wlan.internal.wlanEqualize(demodData, chanEstData, recParams.EqualizationMethod, noiseVarEst);
+% end
+[eqDataSym, csiData] = wlanEqualize(demodData, chanEstData, recParams.EqualizationMethod, noiseVarEst);
+
+disp([eqDataSym(:,1,1:2), txDataSubcarrier(:,1,1:2)]);
 
 % Constellation demapping
 qamDemodOut = wlanConstellationDemap(eqDataSym, noiseVarEst, mcsTable.NBPSCS);

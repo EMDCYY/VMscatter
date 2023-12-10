@@ -15,7 +15,7 @@ H0 = CH_Post_Tag * CH_Pre_Tag;
 
 %% VMscatter Channel Estimation 
 
-% tranmistted symbol for backscatter reference signal
+% tranmistted subcarriers in one symbol for backscatter reference signal
 tx_wifi_reference = WiFiData(2, modulation); 
 tx_tag_reference = [-1, 1]; % reference data
 

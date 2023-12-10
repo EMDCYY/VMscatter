@@ -1,4 +1,4 @@
-function [rxPSDU, rxDataSubcarrier, detectionError] = rxDemod(rx, cfgHT) 
+function [rxPSDU, rxDataSubcarrier, detectionError] = rxDemod(rx, cfgHT, txDataSubcarrier) 
 
         detectionError = 0;
 
@@ -53,7 +53,7 @@ function [rxPSDU, rxDataSubcarrier, detectionError] = rxDemod(rx, cfgHT)
         nVarHT = htNoiseEstimate(htdata,chanEst,cfgHT);
 
         % Recover the transmitted PSDU in HT Data
-        [rxPSDU, rxDataSubcarrier]  = wlanHTDataRecover(htdata,chanEst,nVarHT,cfgHT,...
+        [rxPSDU, rxDataSubcarrier]  = wlanHTDataRecover(htdata,chanEst,nVarHT,cfgHT, txDataSubcarrier, ...
             "LDPCDecodingMethod","norm-min-sum", 'PilotPhaseTracking', 'None');
 
 end

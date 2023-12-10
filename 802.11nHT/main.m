@@ -2,44 +2,78 @@ close all;
 clear;
 clc;
 
-NumTransmitAntennas = 4;
-NumTagAntennas = 4;
-NumReceiveAntennas = 4;
-snr_vmsx = 25:10:65;
+
+
+NumTransmitAntennas = 2;
+NumTagAntennas = 2; 
+NumReceiveAntennas = 2; 
+snr_vmsx = 55:10:75;
 snr_orig = 55*ones(1,length(snr_vmsx));
 
 
-% Create a format configuration object for a 2-by-2 HT transmission
+% Create a format configuration object for a K-by-K HT transmission
 cfgHT = wlanHTConfig;
 cfgHT.ChannelBandwidth = 'CBW20'; % 20 MHz channel bandwidth
-cfgHT.NumTransmitAntennas = NumTransmitAntennas;    % 2 transmit antennas
-cfgHT.NumSpaceTimeStreams = cfgHT.NumTransmitAntennas;    % 2 space-time streams
-cfgHT.PSDULength = 2000;          % PSDU length in bytes
-cfgHT.MCS = 15;                   % 64-QAM rate-5/6
+cfgHT.NumTransmitAntennas = NumTransmitAntennas;    % transmit antennas
+cfgHT.NumSpaceTimeStreams = cfgHT.NumTransmitAntennas;    % space-time streams
+cfgHT.PSDULength = 1000;          % PSDU length in bytes
+cfgHT.MCS = 15;
+
+% switch min(NumTransmitAntennas, NumReceiveAntennas)
+%   case 1
+%         cfgHT.MCS = 7; % 1-NSS, 64-QAM rate-5/6
+%   case 2
+%         cfgHT.MCS = 15; % 2-NSS, 64-QAM rate-5/6
+%   case 3
+%         cfgHT.MCS = 23; % 3-NSS, 64-QAM rate-5/6
+%   case 4
+%         cfgHT.MCS = 31; % 4-NSS, 64-QAM rate-5/6
+%   otherwise 
+%         cfgHT.MCS = 15;
+% end 
+
+
+
 cfgHT.ChannelCoding = 'BCC';      % BCC channel coding
 
+% Get the baseband sampling rate
+fs = wlanSampleRate(cfgHT);
 
 % Create and configure the channel
 tgnChannel = wlanTGnChannel;
 tgnChannel.DelayProfile = 'Model-A';
-tgnChannel.NumTransmitAntennas = cfgHT.NumTransmitAntennas;
+tgnChannel.NumTransmitAntennas = NumTransmitAntennas;
 tgnChannel.NumReceiveAntennas = NumReceiveAntennas;
-tgnChannel.TransmitReceiveDistance = 3; % Distance in meters for NLOS
+tgnChannel.TransmitReceiveDistance = 10; % Distance in meters for NLOS
 tgnChannel.LargeScaleFadingEffect = 'None';
 tgnChannel.NormalizeChannelOutputs = false;
+tgnChannel.SampleRate = fs;
+
+tgnChannel_before_vmsx = wlanTGnChannel;
+tgnChannel_before_vmsx.DelayProfile = 'Model-A';
+tgnChannel_before_vmsx.NumTransmitAntennas = NumTransmitAntennas;
+tgnChannel_before_vmsx.NumReceiveAntennas = NumTagAntennas;
+tgnChannel_before_vmsx.TransmitReceiveDistance = 3; 
+tgnChannel_before_vmsx.LargeScaleFadingEffect = 'None';
+tgnChannel_before_vmsx.NormalizeChannelOutputs = false;
+tgnChannel_before_vmsx.SampleRate = fs;
+
+
+tgnChannel_after_vmsx = wlanTGnChannel;
+tgnChannel_after_vmsx.DelayProfile = 'Model-A';
+tgnChannel_after_vmsx.NumTransmitAntennas = NumTagAntennas;
+tgnChannel_after_vmsx.NumReceiveAntennas = NumReceiveAntennas;
+tgnChannel_after_vmsx.TransmitReceiveDistance = 3;
+tgnChannel_after_vmsx.LargeScaleFadingEffect = 'None';
+tgnChannel_after_vmsx.NormalizeChannelOutputs = false;
+tgnChannel_after_vmsx.SampleRate = fs;
 
 
 maxNumPEs = 10; % The maximum number of packet errors at an SNR point
 maxNumPackets = 100; % The maximum number of packets at an SNR point
 
-% Get the baseband sampling rate
-fs = wlanSampleRate(cfgHT);
-
 % Get the OFDM info
 ofdmInfo = wlanHTOFDMInfo('HT-Data',cfgHT);
-
-% Set the sampling rate of the channel
-tgnChannel.SampleRate = fs;
 
 ind = wlanFieldIndices(cfgHT);
 
@@ -66,9 +100,10 @@ for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
     % Loop to simulate multiple packets
     numPacketErrors_orig = 0;
     numPacketErrors_vmsx = 0;
-    n = 1; % Index of packet transmitted
+    n_orig = 1; % Index of packet transmitted
+    n_vmsx = 1; % Index of packet reflected
 
-    while numPacketErrors_vmsx<=maxNumPEs && n<=maxNumPackets
+    while numPacketErrors_orig<=maxNumPEs && n_orig<=maxNumPackets
 
         % Generate a packet waveform
         txPSDU = randi([0 1],cfgHT.PSDULength*8,1); % PSDULength in bytes
@@ -85,8 +120,11 @@ for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
         % Add noise
         rx_orig = awgn(rx_orig,packetSNR_orig);
 
-        [rxPSDU_orig, rxDataSubcarrier_orig,  detectionError_orig] = rxDemod_orig(rx_orig, cfgHT);
-        n = n + 1;
+        [rxPSDU_orig, rxDataSubcarrier_orig,  detectionError_orig] = rxDemod_orig(rx_orig, cfgHT, txDataSubcarrier);
+        n_orig = n_orig + 1;
+        disp([rxDataSubcarrier_orig(:,1,:), txDataSubcarrier(:,1,:)]);
+        
+
 
         if  detectionError_orig == 1
             numPacketErrors_orig = numPacketErrors_orig+ detectionError_orig;
@@ -95,27 +133,36 @@ for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
         
         % Determine if any bits are in error, i.e. a packet error
         packetError_orig = any(biterr(txPSDU,rxPSDU_orig));
+        disp([txPSDU,rxPSDU_orig]);
         numPacketErrors_orig = numPacketErrors_orig+packetError_orig;
 
         %% VMscatter Channel
         % Pass the waveform through the TGn channel model
-        reset(tgnChannel); % Reset channel for different realization
-        rx_before_vmsx = tgnChannel(tx);
+        reset(tgnChannel_before_vmsx); % Reset channel for different realization
+        rx_before_vmsx = tgnChannel_before_vmsx(tx);
 
 
-        % Pass the waveform through the tag
-        [rx_vmsx, txTagData] = VMscatterMod(rx_before_vmsx, ind, ...
-            NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas);
+%         % Pass the waveform through the tag
+%         [rx_vmsx, txTagData] = VMscatterMod(rx_before_vmsx, ind, ...
+%             NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas, cfgHT);
 
+        % Test
+        rx_vmsx = rx_before_vmsx; 
+        
 
-        reset(tgnChannel); % Reset channel for different realization
-        rx_after_vmsx = tgnChannel(rx_vmsx);
+        reset(tgnChannel_after_vmsx); % Reset channel for different realization
+        rx_after_vmsx = tgnChannel_after_vmsx(rx_vmsx);
 
         % Add noise
         rx_after_vmsx = awgn(rx_after_vmsx,packetSNR_vmsx);
 
-        [rxPSDU_vmsx, rxDataSubcarrier_vmsx,  detectionError_vmsx] = rxDemod_orig(rx_after_vmsx, cfgHT);
-        n = n + 1;
+        [rxPSDU_vmsx, rxDataSubcarrier_vmsx,  detectionError_vmsx] = rxDemod_vmsx(rx_after_vmsx, cfgHT);
+        n_vmsx = n_vmsx + 1;
+%         disp([rxDataSubcarrier_vmsx(:,1,:), txDataSubcarrier(:,1,:)]);
+
+%         rxTagData = VMscatterDeMod(txDataSubcarrier, rxDataSubcarrier_vmsx, ...
+%             NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas);
+
 
         if  detectionError_vmsx == 1
             numPacketErrors_vmsx = numPacketErrors_vmsx + detectionError_vmsx;
@@ -130,14 +177,14 @@ for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
     end
 
     % Calculate packet error rate (PER) at SNR point
-    packetErrorRate_orig(idxSNR) = numPacketErrors_orig/(n-1);
+    packetErrorRate_orig(idxSNR) = numPacketErrors_orig/(n_orig-1);
     disp(['Original Channel: SNR ' num2str(snr_orig(idxSNR))...
-          ' completed after '  num2str(n-1) ' packets,'...
+          ' completed after '  num2str(n_orig-1) ' packets,'...
           ' PER: ' num2str(packetErrorRate_orig(idxSNR))]);
 
-    packetErrorRate_vmsx(idxSNR) = numPacketErrors_vmsx/(n-1);
+    packetErrorRate_vmsx(idxSNR) = numPacketErrors_vmsx/(n_vmsx-1);
     disp(['VMscatter Channel: SNR ' num2str(snr_vmsx(idxSNR))...
-          ' completed after '  num2str(n-1) ' packets,'...
+          ' completed after '  num2str(n_vmsx-1) ' packets,'...
           ' PER: ' num2str(packetErrorRate_vmsx(idxSNR))]);
 end
 

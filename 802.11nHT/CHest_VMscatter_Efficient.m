@@ -1,4 +1,4 @@
-function rxTagData = VMscatterDeMod(txSC, rxSC, NumTX, NumTag, NumRX)
+function CH_Post_Tag_Est = CHest_VMscatter_Efficient(txSC, rxSC)
 
 % We know that
 % H1 = H0 \ CH_Post_Tag * diag(tx_tag_reference) * CH_Pre_Tag
@@ -31,20 +31,28 @@ function rxTagData = VMscatterDeMod(txSC, rxSC, NumTX, NumTag, NumRX)
 % c4 = -2 * b3a2
 % for example, set a1 = 1 and a3 = 1.
 
-txSC = permute(txSC, [3, 1, 2]);
-rxSC = permute(rxSC, [3, 1, 2]);
+% The total number of term is 2x2 (TX) + 2x2 (RX) = 8
 
-code_rank = min(min(NumTX, NumTag), NumRX);
+code_rank = size(txSC, 3) + 1;
 
-CH_Post_Tag_Est  = CHest_VMscatter_Efficient(txSC(:,:,1:code_rank-1), rxSC(:,:,1:code_rank-1));
+H1 = zeros(code_rank, code_rank, code_rank-1);
 
+for ii = 1:1:code_rank-1
+    H1(:,:,ii) = rxSC(:,:,ii) / txSC(:,:,ii);
+end
 
+CH_VMscatter_Efficient = zeros(2,4);
 
+referenceMatrix = [1,1;-1,1];  % all 0 sequence + reference signal
 
+V = diag(ones(1,2)); % Inv(CH_Pre_Tag) *  diag([1,1]) * CH_Pre_Tag
 
+% [1, c1] = [b1, b2] * [a1,-a1]
+% [0, c3]   [b3, b4]   [a3, a3]
 
-rx_code_efficient = Decode_VMscatter_Efficient(tx_wifi_symbol_1, rx_wifi_symbol_1, ...
-                                tx_wifi_symbol_2, rx_wifi_symbol_2, CH_Post_Tag_Est); 
-rxTagData = SpaceTimeDecode(rx_code_efficient);
+Inv_CH_Pre_Tag = [V(:,1), H1(:,1)] / [1,-1; 1, 1];
+
+CH_Post_Tag_Est = inv(Inv_CH_Pre_Tag);
+
 
 end
