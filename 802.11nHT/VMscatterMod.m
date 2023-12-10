@@ -1,29 +1,32 @@
-function [rx_vmsx, txTagData] = VMscatterMod(rx, ind, NumTX, NumTag, NumRX, cfgHT)
-
-KK = NumTag;
-while mod(KK, 2) == 0
-    KK = KK / 2;
-end
-if KK ~= 1
-    error('The number of tag antennas is not a power of 2.');
-end
+function [rx_vmsx, txTagData] = VMscatterMod(rx, ind, NumTag, cfgHT)
 
 mcsTable   = wlan.internal.getRateTable(cfgHT);
 numSS      = mcsTable.Nss;
 
-if NumTag > numSS
-    error(['This code only demonstrates VMscatter under the condition of ' ...
-           'full-rank encoding, hence the number of tag antennas must not ' ...
-           'exceed the number of spatial streams.']);
+if NumTag <= numSS 
+    code_rank = 2^floor(log2(NumTag));
+else
+    code_rank = 2^floor(log2(numSS));
 end
 
-code_ref = VMscatterRef(NumTag);
 
-txTagData = dec2bin(randi([0, 2^NumTag-1]),NumTag) - '0';
+code_ref = VMscatterRef(code_rank);
+
+txTagData = dec2bin(randi([0, 2^code_rank-1]),code_rank) - '0';
 
 code_data = iterativeSTC(txTagData);
 
 code_mod = [code_ref, code_data];
+
+if NumTag > numSS
+    multiple = floor(NumTag / numSS);
+    if multiple >= 2
+        code_mod_extended = repmat(code_mod, 1, multiple);
+        code_mod = reshape(code_mod_extended.', size(code_mod,2), []).';
+    end
+end
+
+disp(code_mod);
 
 rx_vmsx = rx.';
 

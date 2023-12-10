@@ -4,10 +4,10 @@ clc;
 
 
 
-NumTransmitAntennas = 2;
-NumTagAntennas = 2; 
-NumReceiveAntennas = 2; 
-snr_vmsx = 55:10:75;
+NumTransmitAntennas = 4;
+NumTagAntennas = 4; 
+NumReceiveAntennas = 4; 
+snr_vmsx = 55:10:95;
 snr_orig = 55*ones(1,length(snr_vmsx));
 
 
@@ -16,21 +16,20 @@ cfgHT = wlanHTConfig;
 cfgHT.ChannelBandwidth = 'CBW20'; % 20 MHz channel bandwidth
 cfgHT.NumTransmitAntennas = NumTransmitAntennas;    % transmit antennas
 cfgHT.NumSpaceTimeStreams = cfgHT.NumTransmitAntennas;    % space-time streams
-cfgHT.PSDULength = 1000;          % PSDU length in bytes
-cfgHT.MCS = 15;
+cfgHT.PSDULength = 2000;          % PSDU length in bytes
 
-% switch min(NumTransmitAntennas, NumReceiveAntennas)
-%   case 1
-%         cfgHT.MCS = 7; % 1-NSS, 64-QAM rate-5/6
-%   case 2
-%         cfgHT.MCS = 15; % 2-NSS, 64-QAM rate-5/6
-%   case 3
-%         cfgHT.MCS = 23; % 3-NSS, 64-QAM rate-5/6
-%   case 4
-%         cfgHT.MCS = 31; % 4-NSS, 64-QAM rate-5/6
-%   otherwise 
-%         cfgHT.MCS = 15;
-% end 
+switch min(NumTransmitAntennas, NumReceiveAntennas)
+  case 1
+        cfgHT.MCS = 7; % 1-NSS, 64-QAM rate-5/6
+  case 2
+        cfgHT.MCS = 15; % 2-NSS, 64-QAM rate-5/6
+  case 3
+        cfgHT.MCS = 23; % 3-NSS, 64-QAM rate-5/6
+  case 4
+        cfgHT.MCS = 31; % 4-NSS, 64-QAM rate-5/6
+  otherwise 
+        cfgHT.MCS = 15;
+end 
 
 
 
@@ -88,9 +87,9 @@ rxDemod_vmsx = @rxDemod;
 for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
     % Set random substream index per iteration to ensure that each
     % iteration uses a repeatable set of random numbers
-    % stream = RandStream('combRecursive','Seed',0);
-    % stream.Substream = idxSNR;
-    % RandStream.setGlobalStream(stream);
+%     stream = RandStream('combRecursive','Seed',0);
+%     stream.Substream = idxSNR;
+%     RandStream.setGlobalStream(stream);
 
     % Account for noise energy in nulls so the SNR is defined per
     % active subcarrier
@@ -120,11 +119,10 @@ for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
         % Add noise
         rx_orig = awgn(rx_orig,packetSNR_orig);
 
-        [rxPSDU_orig, rxDataSubcarrier_orig,  detectionError_orig] = rxDemod_orig(rx_orig, cfgHT, txDataSubcarrier);
+        [rxPSDU_orig, rxDataSubcarrier_orig,  detectionError_orig] = rxDemod_orig(rx_orig, cfgHT);
         n_orig = n_orig + 1;
-        disp([rxDataSubcarrier_orig(:,1,:), txDataSubcarrier(:,1,:)]);
+%         disp([rxDataSubcarrier_orig(:,13,:), txDataSubcarrier(:,13,:)]); % Test
         
-
 
         if  detectionError_orig == 1
             numPacketErrors_orig = numPacketErrors_orig+ detectionError_orig;
@@ -133,7 +131,6 @@ for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
         
         % Determine if any bits are in error, i.e. a packet error
         packetError_orig = any(biterr(txPSDU,rxPSDU_orig));
-        disp([txPSDU,rxPSDU_orig]);
         numPacketErrors_orig = numPacketErrors_orig+packetError_orig;
 
         %% VMscatter Channel
@@ -142,12 +139,10 @@ for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
         rx_before_vmsx = tgnChannel_before_vmsx(tx);
 
 
-%         % Pass the waveform through the tag
-%         [rx_vmsx, txTagData] = VMscatterMod(rx_before_vmsx, ind, ...
-%             NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas, cfgHT);
-
-        % Test
-        rx_vmsx = rx_before_vmsx; 
+        % Pass the waveform through the tag
+        [rx_vmsx, txTagData] = VMscatterMod(rx_before_vmsx, ind, ...
+          NumTagAntennas, cfgHT);
+%         rx_vmsx = rx_before_vmsx; % Test
         
 
         reset(tgnChannel_after_vmsx); % Reset channel for different realization
@@ -156,12 +151,13 @@ for idxSNR = 1:cntSNR % Use 'for' to debug the simulation
         % Add noise
         rx_after_vmsx = awgn(rx_after_vmsx,packetSNR_vmsx);
 
+
         [rxPSDU_vmsx, rxDataSubcarrier_vmsx,  detectionError_vmsx] = rxDemod_vmsx(rx_after_vmsx, cfgHT);
         n_vmsx = n_vmsx + 1;
-%         disp([rxDataSubcarrier_vmsx(:,1,:), txDataSubcarrier(:,1,:)]);
+%         disp([rxDataSubcarrier_vmsx(:,8,:), txDataSubcarrier(:,8,:)]);
 
-%         rxTagData = VMscatterDeMod(txDataSubcarrier, rxDataSubcarrier_vmsx, ...
-%             NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas);
+        rxTagData = VMscatterDeMod(txDataSubcarrier, rxDataSubcarrier_vmsx, ...
+            NumTransmitAntennas, NumTagAntennas, NumReceiveAntennas, cfgHT);
 
 
         if  detectionError_vmsx == 1

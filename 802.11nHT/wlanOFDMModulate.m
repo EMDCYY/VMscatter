@@ -1,4 +1,4 @@
-function [y, dataSubcarrier] = wlanOFDMModulate(x,cplen,varargin)
+function y = wlanOFDMModulate(x,cplen,varargin)
 %wlanOFDMModulate Perform OFDM modulation
 %
 %   Note: This is an internal undocumented function and its API and/or
@@ -50,6 +50,8 @@ prmStr.NumTransmitAntennas = numTx;
 prmStr.FFTLength = fftLen;
 prmStr.CyclicPrefixLength = cplen;
 % y = comm.internal.ofdm.modulate(x,prmStr);
-[y, dataSubcarrier] = ofdmModulate(x,prmStr);
+y = ofdmModulate(x,prmStr);
+
+
 
 end

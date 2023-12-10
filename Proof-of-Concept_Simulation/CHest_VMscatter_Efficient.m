@@ -1,4 +1,4 @@
-function CH_Post_Tag_Est = CHest_VMscatter_Efficient(tx_wifi_reference, rx_wifi_reference)
+function CH_Pre_Tag_Est = CHest_VMscatter_Efficient(tx_wifi_reference, rx_wifi_reference)
 
 H1 = rx_wifi_reference / tx_wifi_reference;
 
@@ -33,19 +33,17 @@ H1 = rx_wifi_reference / tx_wifi_reference;
 % c4 = -2 * b3a2
 % for example, set a1 = 1 and a3 = 1.
 
-% The total number of term is 2x2 (TX) + 2x2 (RX) = 8
-CH_VMscatter_Efficient = zeros(2,4);
-
-referenceMatrix = [1,1;-1,1];  % all 0 sequence + reference signal
-
 V = diag(ones(1,2)); % Inv(CH_Pre_Tag) *  diag([1,1]) * CH_Pre_Tag
 
+% Pick up the first and 3rd line of Inv(CH_Pre_Tag) *  diag * CH_Pre_Tag
 % [1, c1] = [b1, b2] * [a1,-a1]
 % [0, c3]   [b3, b4]   [a3, a3]
+% set a1 = 1 and a3 = 1 
+% [V(:,1), H1(:,1)] = Inv_CH_Pre_Tag * []
 
-Inv_CH_Pre_Tag = [V(:,1), H1(:,1)] / [1,-1; 1, 1];
+Inv_CH_Pre_Tag = [V(:,1), H1(:,1)] / [1, -1; 1, 1];
 
-CH_Post_Tag_Est = inv(Inv_CH_Pre_Tag);
+CH_Pre_Tag_Est = inv(Inv_CH_Pre_Tag);
 
 
 end

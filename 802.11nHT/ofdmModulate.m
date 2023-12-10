@@ -1,4 +1,4 @@
-function [yout, zeroPaddedGrid] = modulate(gridIn,prmStr)
+function yout = ofdmModulate(gridIn,prmStr)
 % COMM.INTERNAL.OFDM.MODULATE OFDM modulation
 %
 %   Note: This is an internal undocumented function and its API and/or

@@ -35,8 +35,8 @@ CH_VMscatter_Accurate = CHest_VMscatter_Accurate(tx_wifi_reference, rx_wifi_refe
 % Hi(1,2)*Hr(2,1), Hi(1,2)*Hr(2,2), Hi(2,2)*Hr(2,1), Hi(2,2)*Hr(2,2)]);
 % disp(CH_VMscatter_Accurate);
 
-% For Efficient VMscatter, estimate channel after tag
-CH_Post_Tag_Est  = CHest_VMscatter_Efficient(tx_wifi_reference, rx_wifi_reference);
+% For Efficient VMscatter, estimate channel before tag
+CH_Pre_Tag_Est  = CHest_VMscatter_Efficient(tx_wifi_reference, rx_wifi_reference);
 % Verfiry
 % CH_Post_Tag_Est \ diag([-1,1]) * CH_Post_Tag_Est * tx_wifi_reference - rx_wifi_reference
 
@@ -79,7 +79,7 @@ for loop = 1:1:10000
 
         % Decoded backscatter data using Efficient VMscatter
         rx_code_efficient = Decode_VMscatter_Efficient(tx_wifi_symbol_1, rx_wifi_symbol_1, ...
-                                tx_wifi_symbol_2, rx_wifi_symbol_2, CH_Post_Tag_Est); 
+                                tx_wifi_symbol_2, rx_wifi_symbol_2, CH_Pre_Tag_Est); 
         rx_tag_data_efficient = SpaceTimeDecode(rx_code_efficient);
 
         [number_efficient,ratio_efficient] = biterr(tx_tag_data, rx_tag_data_efficient);

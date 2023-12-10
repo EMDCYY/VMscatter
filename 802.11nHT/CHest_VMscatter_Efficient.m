@@ -1,4 +1,4 @@
-function CH_Post_Tag_Est = CHest_VMscatter_Efficient(txSC, rxSC)
+function CH_Post_Tag_Est = CHest_VMscatter_Efficient(txSC, rxSC, NumTag, cfgHT)
 
 % We know that
 % H1 = H0 \ CH_Post_Tag * diag(tx_tag_reference) * CH_Pre_Tag
@@ -33,7 +33,17 @@ function CH_Post_Tag_Est = CHest_VMscatter_Efficient(txSC, rxSC)
 
 % The total number of term is 2x2 (TX) + 2x2 (RX) = 8
 
-code_rank = size(txSC, 3) + 1;
+mcsTable   = wlan.internal.getRateTable(cfgHT);
+numSS      = mcsTable.Nss;
+
+if NumTag <= numSS 
+    code_rank = 2^floor(log2(NumTag));
+else
+    code_rank = 2^floor(log2(numSS));
+end
+
+txSC = txSC(:,:,1:code_rank-1);
+rxSC = rxSC(:,:,1:code_rank-1);
 
 H1 = zeros(code_rank, code_rank, code_rank-1);
 
@@ -41,7 +51,6 @@ for ii = 1:1:code_rank-1
     H1(:,:,ii) = rxSC(:,:,ii) / txSC(:,:,ii);
 end
 
-CH_VMscatter_Efficient = zeros(2,4);
 
 referenceMatrix = [1,1;-1,1];  % all 0 sequence + reference signal
 

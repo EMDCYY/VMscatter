@@ -191,9 +191,13 @@ dataSpMapped = wlan.internal.spatialMap(dataCycShift, cfgHT.SpatialMapping, numT
 
 % OFDM modulate
 % wout = wlan.internal.wlanOFDMModulate(dataSpMapped, ofdm.CPLength, osf);
-[wout, dataSubcarrier] = wlanOFDMModulate(dataSpMapped, ofdm.CPLength, osf);
+wout = wlanOFDMModulate(dataSpMapped, ofdm.CPLength, osf);
+
+
 
 % Scale and output
 y = wout  * ofdm.FFTLength/sqrt(numSTS*ofdm.NumTones);
+
+dataSubcarrier = rotatedData;
 
 end

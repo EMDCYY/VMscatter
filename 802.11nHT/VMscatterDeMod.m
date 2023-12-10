@@ -1,4 +1,4 @@
-function rxTagData = VMscatterDeMod(txSC, rxSC, NumTX, NumTag, NumRX)
+function rxTagData = VMscatterDeMod(txSC, rxSC, NumTX, NumTag, NumRX, cfgHT)
 
 % We know that
 % H1 = H0 \ CH_Post_Tag * diag(tx_tag_reference) * CH_Pre_Tag
@@ -34,9 +34,16 @@ function rxTagData = VMscatterDeMod(txSC, rxSC, NumTX, NumTag, NumRX)
 txSC = permute(txSC, [3, 1, 2]);
 rxSC = permute(rxSC, [3, 1, 2]);
 
-code_rank = min(min(NumTX, NumTag), NumRX);
+mcsTable   = wlan.internal.getRateTable(cfgHT);
+numSS      = mcsTable.Nss;
 
-CH_Post_Tag_Est  = CHest_VMscatter_Efficient(txSC(:,:,1:code_rank-1), rxSC(:,:,1:code_rank-1));
+if NumTag <= numSS 
+    code_rank = 2^floor(log2(NumTag));
+else
+    code_rank = 2^floor(log2(numSS));
+end
+
+CH_Post_Tag_Est  = CHest_VMscatter_Efficient(txSC, rxSC, NumTag, cfgHT);
 
 
 
